@@ -1,0 +1,24 @@
+﻿@using Domain.Entities
+
+<div class="property-card">
+    <div class="property-card-photo">
+        <img src=@GetPrimaryPhoto() alt="" />
+    </div>
+    <div class="property-card-body">
+        <h2><strong>@Property.Name</strong></h2>
+        <h3>@Property.Price</h3>
+    </div>
+    <div class="property-card-buttons">
+        <button><NavLink href="/properties/@{PropertyId}">Show Details</NavLink></button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Property Property { get; set; } 
+    public async string GetPrimaryPhoto()
+    {
+        return await Property?.Photos?.FirstOrDefaultAsync(p => p.IsPrim).ImageUrl ?? "images/no-image.jpg"; //to get url of primary photo, else get no-image.jpg
+    }
+
+}
