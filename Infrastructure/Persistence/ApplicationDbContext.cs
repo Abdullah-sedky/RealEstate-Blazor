@@ -2,14 +2,13 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Domain.Entities;
-namespace RealEstateBlazor.Data
+namespace Infrastructure.Persistence
     {
         public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
             {
             }
-
             public DbSet<Property> Properties { get; set; }
             public DbSet<Agent> Agents { get; set; }
             public DbSet<Location> Locations { get; set; }
@@ -52,7 +51,6 @@ namespace RealEstateBlazor.Data
                     .HasForeignKey(comp => comp.CityId)
                     .OnDelete(DeleteBehavior.Restrict);
 
- 
                modelBuilder.Entity<ApplicationUser>() 
                 .HasMany(u => u.Properties)
                 .WithOne(p => p.User);

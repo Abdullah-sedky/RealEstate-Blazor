@@ -1,31 +1,15 @@
-using Domain.Entities;
-using Domain.Enums;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations;
-
 namespace Domain.Entities
 {
-    public class ApplicationUser : IdentityUser
+    public class ApplicationUser: IdentityUser
     {
-        [Required]
-        [StringLength(50)]
-        public string FirstName { get; set; } = string.Empty;
-
-        [Required]
-        [StringLength(50)]
-        public string LastName { get; set; } = string.Empty;
-
-        [Range(18, 120)]
-        public int Age { get; set; }
-
-        [Phone]
-        public string? Number { get; set; }
-        public UserRole Role { get; set; } 
-
-        public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
-        public virtual Agent? AgentProfile { get; set; }
-
-        public string FullName => $"{FirstName} {LastName}";
+        public ICollection<Property> Properties { get; set; } = new List<Property>(); 
     }
-
 }
+// Identity library creates IdentityUser model with main user login info,
+// but to add more fields, I created ApplicationUser that implements IdentityUser, with extra fields.

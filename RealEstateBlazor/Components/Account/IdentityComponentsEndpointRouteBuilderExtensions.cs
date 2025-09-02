@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using RealEstateBlazor.Components.Account.Pages;
 using RealEstateBlazor.Components.Account.Pages.Manage;
-using RealEstateBlazor.Data;
+using Infrastructure.Persistence;
 using Domain.Entities;
 using System.Security.Claims;
 using System.Text.Json;

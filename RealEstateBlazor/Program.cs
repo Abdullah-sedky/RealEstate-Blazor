@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RealEstateBlazor.Components;
 using RealEstateBlazor.Components.Account;
-using RealEstateBlazor.Data;
+using Infrastructure.Persistence;
 using Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,10 +19,11 @@ builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuth
 
 builder.Services.AddAuthentication(options =>
     {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        //set defaults
+        options.DefaultScheme = IdentityConstants.ApplicationScheme; //use the normal ASP.NET Identity cookie as default way to authenticate users
+        options.DefaultSignInScheme = IdentityConstants.ExternalScheme; //temporarily stores the external (login by google, facebook,etc.) login cookie until the user is linked to a real account
     })
-    .AddIdentityCookies();
+    .AddIdentityCookies(); //adds application cookie, external cookie, and two-factor authentication cookie
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -38,6 +39,8 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

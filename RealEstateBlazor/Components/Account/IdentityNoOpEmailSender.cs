@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using RealEstateBlazor.Data;
+using Infrastructure.Persistence;
 using Domain.Entities;
 
 namespace RealEstateBlazor.Components.Account

@@ -1,8 +1,8 @@
 ﻿using System.Reflection.Metadata;
 using Domain.Entities;
-namespace Application.Interfaces
+namespace Domain.Interfaces
 {
-    public interface IPropertyService
+    public interface IPropertyRepository
     {
         Task<List<Property>> GetAllPropertiesAsync();
         Task<Property> GetPropertyByIdAsync(int id);

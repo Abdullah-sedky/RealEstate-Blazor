@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Application.Interfaces;
 using Domain.Entities;
+using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using RealEstateBlazor.Data;
+using Infrastructure.Persistence;
 namespace Application.Services
 {
-    public class PropertyService:IPropertyService
+    public class PropertyService:IPropertyRepository
     {
         private readonly ApplicationDbContext _context;
 

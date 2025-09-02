@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Application.Interfaces;
+using Domain.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using RealEstateBlazor.Data;
+using Infrastructure.Persistence;
 namespace Application.Services
 {
     public class CompoundService : ICompoundService
