@@ -6,8 +6,8 @@ namespace Domain.Interfaces
     {
         Task<List<Property>> GetAllPropertiesAsync();
         Task<Property> GetPropertyByIdAsync(int id);
+        Task<Property> CreatePropertyAsync(Property property);
         Task EditPropertyInfoAsync(int id, Property property);
         Task RemovePropertyById(int id);
-
     }
 }

@@ -7,61 +7,48 @@ using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.Persistence;
+using Application.DTOs;
+using Infrastructure.Repositories;
+using Application.Mappers;
+using Application.Interfaces;
+
 namespace Application.Services
 {
-    public class PropertyService:IPropertyRepository
+    public class PropertyService : IPropertyService
     {
-        private readonly ApplicationDbContext _context;
-
-        public PropertyService(ApplicationDbContext context) //constructor creates dbContext instance
+        private readonly IPropertyRepository _repository;
+        
+        public PropertyService(IPropertyRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
-
-        public async Task<List<Property>> GetAllPropertiesAsync()
+        
+        public async Task<List<PropertyListDTO>> GetCustomerPropertyList()
         {
-            return await _context.Properties.ToListAsync();
-        } 
+            var properties = await _repository.GetAllPropertiesAsync();
+            return PropertyMapper.ToListDTOs(properties);
+        }
 
         public async Task<Property> GetPropertyByIdAsync(int id)
         {
-            return await _context.Properties.FindAsync(id);   
+            return await _repository.GetPropertyByIdAsync(id);
         }
 
-        public async Task RemovePropertyById(int id)
+        public async Task<Property> CreatePropertyAsync(Property property)
         {
-            var propToRemove = await _context.Properties.FindAsync(id);
-            if (propToRemove != null)
-            {
-                _context.Properties.Remove(propToRemove);
-                await _context.SaveChangesAsync();
-            }
+            return await _repository.CreatePropertyAsync(property);
         }
 
-        public async Task EditPropertyInfoAsync(int id, Property property)
+        public async Task<Property> UpdatePropertyAsync(int id, Property property)
         {
-            var propToEdit = await _context.Properties.FindAsync(id);
-            if(propToEdit != null)
-            {
-                propToEdit.Furnished=property.Furnished;
-                propToEdit.Name=property.Name;
-                propToEdit.Description=property.Description;
-                propToEdit.Price=property.Price;
-                propToEdit.Status=property.Status;
-                propToEdit.Bedrooms=property.Bedrooms;
-                propToEdit.Bathrooms=property.Bathrooms;
-                propToEdit.AreaSize=property.AreaSize;
-                propToEdit.Compound=property.Compound;
-                propToEdit.CompoundId=property.CompoundId;
-                propToEdit.YearBuilt=property.YearBuilt;
-                propToEdit.Photos=property.Photos;
-                propToEdit.Location=property.Location;
-                propToEdit.LocationId=property.LocationId;
-                propToEdit.PropertyType=property.PropertyType;
-                await _context.SaveChangesAsync();
-            }
+            await _repository.EditPropertyInfoAsync(id, property);
+            return await _repository.GetPropertyByIdAsync(id);
         }
 
-
+        public async Task<bool> DeletePropertyAsync(int id)
+        {
+            await _repository.RemovePropertyById(id);
+            return true;
+        }
     }
 }

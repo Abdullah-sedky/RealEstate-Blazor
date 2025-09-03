@@ -1,25 +1,26 @@
-﻿@using Domain.Entities
-
+﻿@using Application.DTOs
+@using Application.Services
+@using Domain.Entities
+@inject PropertyService _propertyService
 <div class="property-card">
     <div class="property-card-photo">
-        <img src=@GetPrimaryPhoto() alt="" />
+        <img src=@Property.PrimaryPhotoUrl alt="" />
     </div>
     <div class="property-card-body">
         <h2><strong>@Property.Name</strong></h2>
+        <h2>@Property.PropertyType</h2>
         <h3>@Property.Price</h3>
     </div>
     <div class="property-card-buttons">
-        <NavLink href="@($"/properties/{Property.PropertyId}")">Details</NavLink>
+        <NavLink href="@($"/properties/{Property.PropertyId}")">Show Details</NavLink>
 
     </div>
 </div>
 
 @code {
     [Parameter]
-    public Property Property { get; set; } 
-    public String GetPrimaryPhoto()
-    {
-        return Property?.Photos?.FirstOrDefault(p => p.IsPrim).ImageUrl ?? "images/no-image.jpg"; //to get url of primary photo, else get no-image.jpg
-    }
+    public PropertyListDTO Property { get; set; } 
+    
+   
 
 }

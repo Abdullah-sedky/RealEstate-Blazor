@@ -5,53 +5,45 @@ using System.Text;
 using System.Threading.Tasks;
 using Domain.Interfaces;
 using Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Infrastructure.Persistence;
+using Application.Interfaces;
+using Infrastructure.Repositories;
+
 namespace Application.Services
 {
     public class CompoundService : ICompoundService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ICompoundRepository _repository;
 
-        public CompoundService(ApplicationDbContext context) 
+        public CompoundService(ICompoundRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
         public async Task<List<Compound>> GetAllCompoundsAsync()
         {
-            return await _context.Compounds.ToListAsync();
+            return await _repository.GetAllCompoundsAsync();
         }
 
         public async Task<Compound> GetCompoundByIdAsync(int id)
         {
-            return await _context.Compounds.FindAsync(id);
+            return await _repository.GetCompoundByIdAsync(id);
         }
 
-        public async Task RemoveCompoundById(int id)
+        public async Task<Compound> CreateCompoundAsync(Compound compound)
         {
-            var compToRemove = await _context.Compounds.FindAsync(id);
-            if (compToRemove != null)
-            {
-                _context.Compounds.Remove(compToRemove);
-                await _context.SaveChangesAsync();
-            }
+            return await _repository.CreateCompoundAsync(compound);
         }
 
-        public async Task EditCompoundInfoAsync(int id, Compound compound)
+        public async Task<Compound> UpdateCompoundAsync(int id, Compound compound)
         {
-            var compToEdit = await _context.Compounds.FindAsync(id);
-            if (compToEdit != null)
-            {
-                compToEdit.Properties = compound.Properties;
-                compToEdit.City=compound.City;
-                compToEdit.CityId = compound.CityId;
-                compToEdit.Name=compound.Name;
-                compToEdit.Description=compound.Description;
-                await _context.SaveChangesAsync();
-            }
+            await _repository.EditCompoundInfoAsync(id, compound);
+            return await _repository.GetCompoundByIdAsync(id);
         }
 
-
+        public async Task<bool> DeleteCompoundAsync(int id)
+        {
+            await _repository.RemoveCompoundById(id);
+            return true;
+        }
     }
 }

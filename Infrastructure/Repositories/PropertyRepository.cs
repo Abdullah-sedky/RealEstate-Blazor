@@ -27,6 +27,13 @@ namespace Infrastructure.Repositories
             return await _context.Properties.FindAsync(id);
         }
 
+        public async Task<Property> CreatePropertyAsync(Property property)
+        {
+            _context.Properties.Add(property);
+            await _context.SaveChangesAsync();
+            return property;
+        }
+
         public async Task RemovePropertyById(int id)
         {
             var propToRemove = await _context.Properties.FindAsync(id);

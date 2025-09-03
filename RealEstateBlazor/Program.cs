@@ -5,12 +5,27 @@ using RealEstateBlazor.Components;
 using RealEstateBlazor.Components.Account;
 using Infrastructure.Persistence;
 using Domain.Entities;
+using Application.Interfaces;
+using Domain.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Automatically register all services using scrutor library
+builder.Services.Scan(scan => scan
+    .FromAssemblyOf<IPropertyService>()
+    .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service")))
+    .AsImplementedInterfaces()
+    .WithScopedLifetime());
+
+builder.Services.Scan(scan => scan
+    .FromAssemblyOf<IPropertyRepository>()
+    .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Repository")))
+    .AsImplementedInterfaces()
+    .WithScopedLifetime());
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
@@ -61,6 +76,9 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Add API controllers
+app.MapControllers();
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
