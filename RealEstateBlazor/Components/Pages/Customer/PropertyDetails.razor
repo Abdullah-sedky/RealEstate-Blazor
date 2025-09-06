@@ -1,0 +1,41 @@
+﻿@page "/properties/{id:int}"
+@using Domain.Entities
+@inject IPropertyService PropertyService
+
+@if (property == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <h1>@property.Name</h1>
+    <div class="property-details">
+        <Carousel>
+            @foreach(var photo in property.Photos)
+            {
+                <CarouselSlide>
+                    <Image Src=@photo alt="@photo.Caption" />
+                </CarouselSlide>
+            }
+        </Carousel>
+        <h2>@property.Name</h2>
+        <h3>Price: @property.Price</h3>
+        <p>Type: @property.PropertyType</p>
+        <p>@property.Description</p>
+        <div class="more-property-details">
+
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private Property? property;
+
+    protected override async Task OnInitializedAsync()
+    {
+        property = await PropertyService.GetPropertyByIdAsync(id);
+    }
+}

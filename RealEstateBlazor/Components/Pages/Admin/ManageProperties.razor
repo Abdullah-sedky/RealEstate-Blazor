@@ -1,0 +1,53 @@
+﻿@page "/admin/properties"
+@inject PropertyService _propertyService
+@using Domain.Entities
+@using Infrastructure.Persistence
+@using Application.Services
+@using Microsoft.AspNetCore.Authorization
+@using System.Reflection
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Properties</PageTitle>
+
+<AuthorizeView>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th colspan="@(typeof(Property).GetProperties().Length)">
+                    <strong>Properties</strong>
+                </th>
+            </tr>
+            <tr>
+                @foreach (PropertyInfo prop in typeof(Property).GetProperties())
+                {
+                    <th>@prop.Name</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (properties != null)
+            {
+                @foreach (var property in properties)
+                {
+                    <tr>
+                        @foreach (PropertyInfo prop in typeof(Property).GetProperties())
+                        {
+                            <td>@prop.GetValue(property)</td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</AuthorizeView>
+
+
+@code {
+    private List<Property> properties;
+    protected override async void OnInitialized()
+    {
+        properties = await _propertyService.GetAllProperties();
+    }
+
+}

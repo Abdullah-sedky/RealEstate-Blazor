@@ -11,6 +11,7 @@ using Application.DTOs;
 using Infrastructure.Repositories;
 using Application.Mappers;
 using Application.Interfaces;
+using System.ComponentModel.DataAnnotations;
 
 namespace Application.Services
 {
@@ -27,6 +28,12 @@ namespace Application.Services
         {
             var properties = await _repository.GetAllPropertiesAsync();
             return PropertyMapper.ToListDTOs(properties);
+        }
+
+        public async Task<List<Property>> GetAllProperties()
+        {
+            var properties = await _repository.GetAllPropertiesAsync();
+            return properties;
         }
 
         public async Task<Property> GetPropertyByIdAsync(int id)

@@ -6,7 +6,7 @@ using RealEstateBlazor.Components.Account;
 using Infrastructure.Persistence;
 using Domain.Entities;
 using Application.Interfaces;
-using Domain.Interfaces;
+using Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Automatically register all services using scrutor library
+// Automatically register all services and repos using scrutor library
 builder.Services.Scan(scan => scan
     .FromAssemblyOf<IPropertyService>()
     .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service")))
@@ -22,7 +22,7 @@ builder.Services.Scan(scan => scan
     .WithScopedLifetime());
 
 builder.Services.Scan(scan => scan
-    .FromAssemblyOf<IPropertyRepository>()
+    .FromAssemblyOf<PropertyRepository>()
     .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Repository")))
     .AsImplementedInterfaces()
     .WithScopedLifetime());
@@ -77,10 +77,7 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Add API controllers
-app.MapControllers();
-
-// Add additional endpoints required by the Identity /Account Razor components.
-app.MapAdditionalIdentityEndpoints();
+// for controllers if needed
+//app.MapControllers();
 
 app.Run();
