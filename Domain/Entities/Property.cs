@@ -21,10 +21,10 @@ namespace Domain.Entities
         public int YearBuilt { get; set; }
         public bool Furnished { get; set; }
 
-        public List<Photo> Photos { get; set; } = null!;
+        public List<Photo>? Photos { get; set; } = null!;
 
-        public string UserId { get; set; } = null!; // Changed to string for Identity
-        public ApplicationUser User { get; set; } = null!;
+        public string? UserId { get; set; } // Changed to string for Identity
+        public ApplicationUser? User { get; set; }
 
         public int CompoundId { get; set; }
         public Compound Compound { get; set; } = null!;

@@ -1,7 +1,7 @@
 ﻿@using Application.DTOs
 @using Application.Services
 @using Domain.Entities
-@inject PropertyService _propertyService
+@inject IPropertyService _propertyService
 <div class="property-card">
     <div class="property-card-photo">
         <img src=@Property.PrimaryPhotoUrl alt="" />
@@ -12,7 +12,7 @@
         <h3>@Property.Price</h3>
     </div>
     <div class="property-card-buttons">
-        <NavLink href="@($"/properties/{Property.PropertyId}")">Show Details</NavLink>
+        <NavLink href="@($"/property/{Property.PropertyId}")">Show Details</NavLink>
 
     </div>
 </div>

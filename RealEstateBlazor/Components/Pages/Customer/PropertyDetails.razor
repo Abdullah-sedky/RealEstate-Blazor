@@ -1,5 +1,6 @@
-﻿@page "/properties/{id:int}"
+﻿@page "/property/{id:int}"
 @using Domain.Entities
+@using Blazorise
 @inject IPropertyService PropertyService
 
 @if (property == null)
@@ -11,10 +12,19 @@ else
     <h1>@property.Name</h1>
     <div class="property-details">
         <Carousel>
-            @foreach(var photo in property.Photos)
+            @if (property.Photos != null)
+            {
+                @foreach (var photo in property.Photos)
+                {
+                    <CarouselSlide>
+                        <Image Src=@photo alt="@photo.Caption" />
+                    </CarouselSlide>
+                }
+            }
+            else
             {
                 <CarouselSlide>
-                    <Image Src=@photo alt="@photo.Caption" />
+                    <Image Src="/placeholder" alt="No photos found"/>
                 </CarouselSlide>
             }
         </Carousel>
@@ -23,6 +33,10 @@ else
         <p>Type: @property.PropertyType</p>
         <p>@property.Description</p>
         <div class="more-property-details">
+            <p>Area Size: @property.AreaSize</p>
+            <p>Bedrooms: @property.Bedrooms</p>
+            <p>Bathrooms: @property.Bathrooms</p>
+
 
         </div>
     </div>

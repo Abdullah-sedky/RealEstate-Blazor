@@ -19,6 +19,9 @@
                 </th>
             </tr>
             <tr>
+               <button class="adminPropButton"><NavLink href="@("/admin/addProperty")">Add Property</NavLink></button>
+            </tr>
+                <tr>
                 @foreach (PropertyInfo prop in typeof(Property).GetProperties())
                 {
                     <th>@prop.Name</th>
@@ -34,6 +37,8 @@
                         @foreach (PropertyInfo prop in typeof(Property).GetProperties())
                         {
                             <td>@prop.GetValue(property)</td>
+                            <td><button class="adminPropButton"><NavLink href="@($"/admin/editProp/{property.PropertyId}")">Edit</NavLink></button></td>
+                            <td><button class="adminPropButton" onclick="@_propertyService.DeletePropertyAsync(property.PropertyId)">">Remove</button></td>
                         }
                     </tr>
                 }
@@ -44,10 +49,10 @@
 
 
 @code {
-    private List<Property> properties;
+    private List<Property>? properties;
     protected override async void OnInitialized()
     {
         properties = await _propertyService.GetAllProperties();
     }
-
+    
 }
