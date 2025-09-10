@@ -1,0 +1,29 @@
+﻿@page "/agent/home"
+@inject AgentService _agentService
+@using Domain.Entities
+@using Infrastructure.Persistence
+@using Application.Services
+@using Microsoft.AspNetCore.Authorization
+@using System.Reflection
+
+@attribute [Authorize(Roles="Agent")]
+
+<div class="agentManagedProps">
+    @if (agent.ManagedProperties!=null) {
+        foreach (var prop in agent.ManagedProperties)
+        {
+           <Blazorise.Card>
+               <Blazorise.CardImage Source= Alt="@prop.Name"/>
+               <Blazorise.CardBody>
+                   <p><strong>@prop.Name</strong></p>
+                   <p>ID: @prop.PropertyId</p>
+                   <NavLink href=@($"/agent/property/{prop.PropertyId}")>View Detials</NavLink>
+               </Blazorise.CardBody>
+           </Blazorise.Card>
+        }
+    }
+</div>
+
+@code {
+    public Agent agent = null!;
+}

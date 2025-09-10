@@ -7,6 +7,7 @@ using Infrastructure.Persistence;
 using Domain.Entities;
 using Application.Interfaces;
 using Infrastructure.Repositories;
+using Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,9 @@ builder.Services.Scan(scan => scan
     .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Repository")))
     .AsImplementedInterfaces()
     .WithScopedLifetime());
+
+
+
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();

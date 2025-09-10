@@ -1,0 +1,50 @@
+﻿@page "/admin/editProperty/{id:int}"
+@using Domain.Entities
+@using Domain.Enums
+@inject IPropertyService _propertyService
+
+<h3>Edit Property</h3>
+<EditForm Model="@propertyToEdit" OnValidSubmit="edit">
+    <label for="Name">Name: </label>
+    <InputText @bind-Value="propertyToEdit.Name" id="Name" />
+    <label for="description">Description: </label>
+    <InputTextArea @bind-Value="propertyToEdit.Description" id="description" />
+    <label for="Price">Price: </label>
+    <InputNumber @bind-Value="propertyToEdit.Price" id="Price" />
+    <label for="PropertyType">Property Type: </label>
+    <InputSelect @bind-Value="propertyToEdit.PropertyType" id="PropertyType">
+        @foreach(var type in Enum.GetValues<PropertyType>())  //convert enum options to string
+        {
+            <option value="@type">@type.ToString()</option>
+        }
+    </InputSelect>
+    <label for="Area">Area Size: </label>
+    <InputNumber @bind-Value="propertyToEdit.AreaSize" id="Area" />
+    <label for="bedrooms">Bedrooms: </label>
+    <InputNumber @bind-Value="propertyToEdit.Bedrooms" id="bedrooms" />
+    <label for="bathrooms">Bathrooms: </label>
+    <InputNumber @bind-Value="propertyToEdit.Bathrooms" id="bathrooms" />
+    <label for="furnish">Furnished: </label>
+    <InputCheckbox @bind-Value="propertyToEdit.Furnished" id="furnish"/>
+    <label for="yearbuilt">Year Built: </label>
+    <InputNumber @bind-Value="propertyToEdit.YearBuilt" id="yearbuilt" />
+    <label for="PropertyStatus">Property Status: </label>
+    <InputSelect @bind-Value="propertyToEdit.Status" id="PropertyStatus">
+        @foreach (var type in Enum.GetValues<PropertyStatus>())  
+        {
+            <option value="@type">@type.ToString()</option>
+        }
+    </InputSelect>
+
+
+
+    </EditForm>
+@code {
+    [Parameter] public int id { get; set; }
+    private Property propertyToEdit = null!;
+    private void edit()
+    {
+        _propertyService.UpdatePropertyAsync(id, propertyToEdit);
+    }
+
+}

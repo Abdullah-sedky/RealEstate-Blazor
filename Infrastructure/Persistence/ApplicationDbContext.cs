@@ -10,6 +10,7 @@ namespace Infrastructure.Persistence
             {
             }
             public DbSet<Property> Properties { get; set; }
+            public DbSet<ManagedProperty> ManagedProperties { get; set; }
             public DbSet<Agent> Agents { get; set; }
             public DbSet<Location> Locations { get; set; }
             public DbSet<City> Cities { get; set; }

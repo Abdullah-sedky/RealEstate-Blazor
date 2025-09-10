@@ -19,9 +19,9 @@
                 </th>
             </tr>
             <tr>
-               <button class="adminAddButton"><NavLink href="@("/admin/addProperty")">Add Property</NavLink></button>
+                <button class="adminAddButton"><NavLink href="@("/admin/addProperty")">Add Property</NavLink></button>
             </tr>
-                <tr>
+            <tr>
                 @foreach (PropertyInfo prop in typeof(Property).GetProperties())
                 {
                     <th>@prop.Name</th>
@@ -52,7 +52,7 @@
     private List<Property>? properties;
     protected override async void OnInitialized()
     {
-        properties = await _propertyService.GetAllProperties();
+        properties = await _propertyService.GetAllUsers();
     }
-    
+
 }

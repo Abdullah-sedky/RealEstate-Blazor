@@ -21,7 +21,7 @@ namespace Domain.Entities
         public string Website { get; set; } = string.Empty;
         public string LinkedinProf { get; set; } = string.Empty;
         public string FacebookProf { get; set; } = string.Empty;
-        public List<Property> ManagedProperties = new();
+        public List<ManagedProperty>? ManagedProperties;
         public string UserId { get; set; } = null!; // Changed to string for Identity
         public ApplicationUser User { get; set; } = null!; // Navigation property
     }
