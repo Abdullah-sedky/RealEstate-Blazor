@@ -2,22 +2,26 @@
 @using Application.Services
 @using Domain.Entities
 @inject IPropertyService _propertyService
-<div class="property-card">
-    <div class="property-card-photo">
-        <img src=@Property.PrimaryPhotoUrl alt="" />
-    </div>
-    <div class="property-card-body">
-        <h2><strong>@Property.Name</strong></h2>
-        <h2>@Property.PropertyType</h2>
-        <h3>@Property.Price</h3>
-    </div>
-    <div class="property-card-buttons">
-        <NavLink href="@($"/property/{Property.PropertyId}")">Show Details</NavLink>
+@if (Property != null)
+{
+    <div class="property-card">
+        <div class="property-card-photo">
+            <img src=@Property.PrimaryPhotoUrl alt="" />
+        </div>
+        <div class="property-card-body">
+            <h2><strong>@Property.Name</strong></h2>
+            <h2>@Property.PropertyType</h2>
+            <h3>@Property.Price</h3>
+        </div>
+        <div class="property-card-buttons">
+            <NavLink href="@($"/property/{Property.PropertyId}")">Show Details</NavLink>
 
+        </div>
     </div>
-</div>
+}
+
 
 @code {
     [Parameter]
-    public PropertyListDTO Property { get; set; } 
+    public PropertyListDTO? Property { get; set; } 
 }

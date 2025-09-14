@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Infrastructure.Persistence;
 using Application.DTOs;
-using Infrastructure.Repositories;
 using Application.Mappers;
 using Application.Interfaces;
 using System.ComponentModel.DataAnnotations;
@@ -27,7 +25,7 @@ namespace Application.Services
         public async Task<List<PropertyListDTO>> GetCustomerPropertyList()
         {
             var properties = await _repository.GetAllPropertiesAsync();
-            return PropertyMapper.ToListDTOs(properties);
+            return PropertyMapper.ToPropertyListDTOs(properties);
         }
 
         public async Task<List<Property>> GetAllProperties()

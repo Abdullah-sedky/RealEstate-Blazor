@@ -1,0 +1,104 @@
+﻿@* @page "/admin/addUser"
+@using Domain.Entities
+@using Domain.Enums
+@using Application.Services
+@using Application.Mappers
+@using Application.DTOs
+@using Microsoft.AspNetCore.Authorization
+@using System.Reflection
+@inject IUserService _userService
+
+@attribute [Authorize (Roles="Admin")]
+
+
+
+<h3>AddUser</h3>
+<div class="modal show d-block" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New User</h5>
+                <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="newUser" OnValidSubmit="CreateUser">
+                    <DataAnnotationsValidator />
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <InputText @bind-Value="newUser.UserName" class="form-control" />
+                        <ValidationMessage For="@(() => newUser.UserName)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <InputText @bind-Value="newUser.Email" class="form-control" />
+                        <ValidationMessage For="@(() => newUser.Email)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <InputText @bind-Value="newUser.PhoneNumber" class="form-control" />
+                        <ValidationMessage For="@(() => newUser.PhoneNumber)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <InputText type="password" @bind-Value="newUser.Password" class="form-control" />
+                        <ValidationMessage For="@(() => newUser.Password)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <InputSelect @bind-Value="newUser.Role" class="form-select">
+                            <option value="">Select Role</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Agent">Agent</option>
+                            <option value="Customer">Customer</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => newUser.Role)" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" disabled="@isCreating">@(isCreating ? "Creating..." : "Create User")</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isCreating = false;
+    private CreateUserDTO newUser = new();
+    private List<UserListDTO>? users;
+    
+
+    private void CloseCreateModal()
+    {
+        showCreateModal = false;
+        newUser = new CreateUserDTO();
+    }
+
+    private async Task CreateUser()
+    {
+        isCreating = true;
+        try
+        {
+            var user = UserMapper.ToApplicationUser(newUser);
+            var result = await _userService.CreateUserAsync(user, newUser.Password);
+
+            if (result.Succeeded)
+            {
+                await _userService.AddUserToRoleAsync(user, newUser.Role);
+                await LoadUsers();
+                CloseCreateModal();
+            }
+            else
+            {
+
+                Console.WriteLine($"Error creating user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+} *@

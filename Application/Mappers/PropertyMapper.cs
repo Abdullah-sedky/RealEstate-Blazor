@@ -9,7 +9,7 @@ namespace Application.Mappers
 {
     public class PropertyMapper
     {
-        public static PropertyListDTO ToListDTO(Property property)
+        public static PropertyListDTO ToPropertyListDTO(Property property)
         {
             return new PropertyListDTO
             {
@@ -23,9 +23,9 @@ namespace Application.Mappers
                 PrimaryPhotoUrl = property.Photos?.FirstOrDefault(p => p.IsPrim)?.ImageUrl
             };
         }
-        public static List<PropertyListDTO> ToListDTOs(List<Property> properties)
+        public static List<PropertyListDTO> ToPropertyListDTOs(List<Property> properties)
         {
-            return properties.Select(ToListDTO).ToList();
+            return properties.Select(ToPropertyListDTO).ToList();
         }
     }
 }

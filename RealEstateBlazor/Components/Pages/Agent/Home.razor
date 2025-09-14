@@ -1,29 +1,305 @@
-﻿@page "/agent/home"
+﻿@*@page "/agent/home"
 @inject AgentService _agentService
+@inject IJSRuntime JSRuntime
 @using Domain.Entities
 @using Infrastructure.Persistence
 @using Application.Services
 @using Microsoft.AspNetCore.Authorization
 @using System.Reflection
-
+@using Blazorise
 @attribute [Authorize(Roles="Agent")]
 
-<div class="agentManagedProps">
-    @if (agent.ManagedProperties!=null) {
-        foreach (var prop in agent.ManagedProperties)
+<div class="agent-dashboard">
+    <div class="welcome-section mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2>Welcome back, @(agent.Fname ?? "Agent")</h2>
+                <p class="text-muted">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+            </div>
+            <div class="agent-avatar">
+                <img src="@(agent?.ProfilePicUrl ?? "/images/default-avatar.png")" alt="Agent Avatar" class="rounded-circle" width="60" height="60" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="stats-section mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <Blazorise.Card Background="Background.Primary" TextColor="TextColor.White">
+                    <Blazorise.CardBody>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-home fa-2x me-3"></i>
+                            <div>
+                                <h4>@(agent?.ManagedProperties?.Count ?? 0)</h4>
+                                <small>Properties Managed</small>
+                            </div>
+                        </div>
+                    </Blazorise.CardBody>
+                </Blazorise.Card>
+            </div>
+            <div class="col-md-3">
+                <Blazorise.Card Background="Background.Success" TextColor="TextColor.White">
+                    <Blazorise.CardBody>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users fa-2x me-3"></i>
+                            <div>
+                                <h4>@activeTenants</h4>
+                                <small>Active Tenants</small>
+                            </div>
+                        </div>
+                    </Blazorise.CardBody>
+                </Blazorise.Card>
+            </div>
+            <div class="col-md-3">
+                <Blazorise.Card Background="Background.Info" TextColor="TextColor.White">
+                    <Blazorise.CardBody>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                            <div>
+                                <h4>@pendingMaintenance</h4>
+                                <small>Pending Maintenance</small>
+                            </div>
+                        </div>
+                    </Blazorise.CardBody>
+                </Blazorise.Card>
+            </div>
+            <div class="col-md-3">
+                <Blazorise.Card Background="Background.Warning" TextColor="TextColor.White">
+                    <Blazorise.CardBody>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-dollar-sign fa-2x me-3"></i>
+                            <div>
+                                <h4>@monthlyRevenue.ToString("C")</h4>
+                                <small>Monthly Revenue</small>
+                            </div>
+                        </div>
+                    </Blazorise.CardBody>
+                </Blazorise.Card>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions mb-4">
+        <h4>Quick Actions</h4>
+        <div class="row">
+            <div class="col-md-2">
+                <NavLink href="/agent/property/add" class="btn btn-primary w-100 mb-2">
+                    <i class="fas fa-plus"></i> Add Property
+                </NavLink>
+            </div>
+            <div class="col-md-2">
+                <NavLink href="/agent/tenants" class="btn btn-success w-100 mb-2">
+                    <i class="fas fa-user-plus"></i> Manage Tenants
+                </NavLink>
+            </div>
+            <div class="col-md-2">
+                <NavLink href="/agent/maintenance" class="btn btn-warning w-100 mb-2">
+                    <i class="fas fa-tools"></i> Maintenance
+                </NavLink>
+            </div>
+            <div class="col-md-2">
+                <NavLink href="/agent/reports" class="btn btn-info w-100 mb-2">
+                    <i class="fas fa-chart-bar"></i> Reports
+                </NavLink>
+            </div>
+            <div class="col-md-2">
+                <NavLink href="/agent/calendar" class="btn btn-secondary w-100 mb-2">
+                    <i class="fas fa-calendar"></i> Calendar
+                </NavLink>
+            </div>
+            <div class="col-md-2">
+                <NavLink href="/agent/messages" class="btn btn-dark w-100 mb-2">
+                    <i class="fas fa-envelope"></i> Messages
+                </NavLink>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Notifications -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <Blazorise.Card>
+                <Blazorise.CardHeader>
+                    <h5><i class="fas fa-bell me-2"></i>Recent Notifications</h5>
+                </Blazorise.CardHeader>
+                <Blazorise.CardBody>
+                    @if (recentNotifications?.Any() == true)
+                    {
+                        @foreach (var notification in recentNotifications.Take(5))
+                        {
+                            <div class="notification-item d-flex align-items-center mb-2 p-2 rounded @GetNotificationClass(notification.Type)">
+                                <i class="@GetNotificationIcon(notification.Type) me-2"></i>
+                                <div class="flex-grow-1">
+                                    <small class="d-block">@notification.Message</small>
+                                    <small class="text-muted">@notification.CreatedAt.ToString("MMM dd, HH:mm")</small>
+                                </div>
+                            </div>
+                        }
+                        <NavLink href="/agent/notifications" class="btn btn-sm btn-outline-primary mt-2">View All</NavLink>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No recent notifications</p>
+                    }
+                </Blazorise.CardBody>
+            </Blazorise.Card>
+        </div>
+        </div>
+       
+    <!-- Managed Properties Section -->
+    <div class="managed-properties">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="fas fa-building me-2"></i>Managed Properties</h4>
+            <NavLink href="/agent/properties" class="btn btn-outline-primary btn-sm">View All Properties</NavLink>
+        </div>
+        
+        @if (agent?.ManagedProperties?.Any() == true)
         {
-           <Blazorise.Card>
-               <Blazorise.CardImage Source= Alt="@prop.Name"/>
-               <Blazorise.CardBody>
-                   <p><strong>@prop.Name</strong></p>
-                   <p>ID: @prop.PropertyId</p>
-                   <NavLink href=@($"/agent/property/{prop.PropertyId}")>View Detials</NavLink>
-               </Blazorise.CardBody>
-           </Blazorise.Card>
+            <div class="row">
+                @foreach (var prop in agent.ManagedProperties.Take(6))
+                {
+                    <div class="col-md-4 mb-3">
+                        <Blazorise.Card Class="property-card h-100">
+                            <Blazorise.CardImage Source=@(prop.Photos.IsPrim? "/images/default-property.jpg")" Alt="@prop.Name" Style="height: 200px; object-fit: cover;" />
+                            <Blazorise.CardBody>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title">@prop.Name</h6>
+                                    <Blazorise.Badge Color="@GetPropertyStatusColor(prop.Status)">@prop.Status</Blazorise.Badge>
+                                </div>
+                                <p class="text-muted small mb-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i>@prop.Address
+                                </p>
+                                <div class="property-details mb-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-bed me-1"></i>@prop.Bedrooms bed
+                                        <i class="fas fa-bath me-1 ms-2"></i>@prop.Bathrooms bath
+                                        <i class="fas fa-ruler-combined me-1 ms-2"></i>@prop.SquareFootage sq ft
+                                    </small>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong class="text-success">@prop.MonthlyRent.ToString("C")/mo</strong>
+                                    <div class="btn-group" role="group">
+                                        <NavLink href=@($"/agent/property/{prop.PropertyId}") class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> View
+                                        </NavLink>
+                                        <NavLink href=@($"/agent/property/edit/{prop.PropertyId}") class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </NavLink>
+                                    </div>
+                                </div>
+                            </Blazorise.CardBody>
+                        </Blazorise.Card>
+                    </div>
+                }
+            </div>
         }
-    }
+        else
+        {
+            <div class="empty-state text-center py-5">
+                <i class="fas fa-home fa-3x text-muted mb-3"></i>
+                <h5>No Properties Yet</h5>
+                <p class="text-muted">Start by adding your first property to manage.</p>
+                <NavLink href="/agent/property/add" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Your First Property
+                </NavLink>
+            </div>
+        }
+    </div>
 </div>
+
+
+<style>
+    .agent-dashboard .stats-section .card {
+        transition: transform 0.2s;
+    }
+    
+    .agent-dashboard .stats-section .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .property-card {
+        transition: box-shadow 0.3s;
+    }
+    
+    .property-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .notification-item {
+        border-left: 3px solid #007bff;
+    }
+    
+    .notification-item.maintenance {
+        border-left-color: #ffc107;
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    
+    .notification-item.urgent {
+        border-left-color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    
+    .notification-item.info {
+        border-left-color: #17a2b8;
+        background-color: rgba(23, 162, 184, 0.1);
+    }
+    
+    .empty-state {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+</style>
 
 @code {
     public Agent agent = null!;
-}
+    public int activeTenants;
+    public int pendingMaintenance;
+    public decimal monthlyRevenue;
+    public List<Notification>? recentNotifications;
+
+
+    private string GetPropertyStatusColor(string status) => status?.ToLower() switch
+    {
+        "available" => "success",
+        "occupied" => "primary",
+        "maintenance" => "warning",
+        "offline" => "danger",
+        _ => "secondary"
+    };
+
+    private string GetNotificationClass(string type) => type?.ToLower() switch
+    {
+        "maintenance" => "maintenance",
+        "urgent" => "urgent",
+        "info" => "info",
+        _ => ""
+    };
+
+    private string GetNotificationIcon(string type) => type?.ToLower() switch
+    {
+        "maintenance" => "fas fa-tools text-warning",
+        "urgent" => "fas fa-exclamation-triangle text-danger",
+        "payment" => "fas fa-dollar-sign text-success",
+        "tenant" => "fas fa-user text-info",
+        _ => "fas fa-info-circle text-primary"
+    };
+
+    private string GetTaskPriorityClass(string priority) => priority?.ToLower() switch
+    {
+        "high" => "border-danger",
+        "medium" => "border-warning",
+        "low" => "border-success",
+        _ => "border-secondary"
+    };
+
+    private Color GetTaskPriorityBadge(string priority) => priority?.ToLower() switch
+    {
+        "high" => Color.Danger,
+        "medium" => Color.Warning,
+        "low" => Color.Success,
+        _ => Color.Secondary
+    };
+} *@
+

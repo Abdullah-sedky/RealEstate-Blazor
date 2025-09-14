@@ -11,7 +11,7 @@ namespace Domain.Interfaces
         Task<List<Compound>> GetAllCompoundsAsync();
         Task<Compound> GetCompoundByIdAsync(int id);
         Task<Compound> CreateCompoundAsync(Compound compound);
-        Task EditCompoundInfoAsync(int id, Compound compound);
-        Task RemoveCompoundById(int id);
+        System.Threading.Tasks.Task EditCompoundInfoAsync(int id, Compound compound);
+        System.Threading.Tasks.Task RemoveCompoundById(int id);
     }
 }

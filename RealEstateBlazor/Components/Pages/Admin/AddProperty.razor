@@ -1,6 +1,7 @@
 ﻿@page "/admin/addProperty"
+@using Microsoft.AspNetCore.Authorization
 <h3>AddProperty</h3>
-
+@attribute [Authorize (Roles="Admin")]
 @code {
 
 }

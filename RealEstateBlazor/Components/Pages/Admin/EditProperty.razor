@@ -1,7 +1,9 @@
 ﻿@page "/admin/editProperty/{id:int}"
 @using Domain.Entities
 @using Domain.Enums
+@using Microsoft.AspNetCore.Authorization
 @inject IPropertyService _propertyService
+@attribute [Authorize (Roles="Admin")]
 
 <h3>Edit Property</h3>
 <EditForm Model="@propertyToEdit" OnValidSubmit="edit">
@@ -35,10 +37,9 @@
             <option value="@type">@type.ToString()</option>
         }
     </InputSelect>
-
-
-
+    <button type="submit">Save</button>
     </EditForm>
+
 @code {
     [Parameter] public int id { get; set; }
     private Property propertyToEdit = null!;

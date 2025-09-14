@@ -1,0 +1,16 @@
+﻿@page "/admin/editUser/{id:int}"
+@using Domain.Entities
+@using Domain.Enums
+@using Application.Services
+@using Application.Mappers
+@using Microsoft.AspNetCore.Authorization
+@using System.Reflection
+@inject IUserService _userService
+
+@attribute [Authorize(Roles = "Admin")]
+
+@code{
+    
+
+    
+}

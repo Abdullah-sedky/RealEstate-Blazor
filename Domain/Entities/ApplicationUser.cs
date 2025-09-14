@@ -8,6 +8,8 @@ namespace Domain.Entities
 {
     public class ApplicationUser: IdentityUser
     {
+        public string Fname { get; set; } = null!;
+        public string Lname { get; set; } = null!;
         public ICollection<Property> Properties { get; set; } = new List<Property>(); 
     }
 }

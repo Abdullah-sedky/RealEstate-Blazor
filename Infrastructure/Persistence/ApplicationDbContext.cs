@@ -17,6 +17,7 @@ namespace Infrastructure.Persistence
             public DbSet<Country> Countries { get; set; }
             public DbSet<Compound> Compounds { get; set; }
             public DbSet<Photo> Photos { get; set; }
+            public DbSet<Notification> Notifications { get; set; }
 
             protected override void OnModelCreating(ModelBuilder modelBuilder)
             {

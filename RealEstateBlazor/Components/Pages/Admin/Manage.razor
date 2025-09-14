@@ -1,0 +1,143 @@
+﻿@page "/admin/properties"
+@inject PropertyService _propertyService
+@inject CompoundService _compoundService
+@inject UserService _userService
+@using Domain.Entities
+@using Infrastructure.Persistence
+@using Application.Services
+@using Microsoft.AspNetCore.Authorization
+@using System.Reflection
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Properties</PageTitle>
+
+    <table class="table table-striped">
+        <thead>
+            <button class="table-view-button" @onclick="@(() => currentView = "Properties")">Properties</button>
+            <button class="table-view-button" @onclick="@(() => currentView = "Compounds")">Compounds</button>
+            <button class="table-view-button" @onclick="@(() => currentView = "Users")">Users</button>
+        </thead>
+        @if (currentView == "Properties")
+        {
+            <thead>
+                <tr>
+                    <th colspan="@(typeof(Property).GetProperties().Length)">
+                        <strong>Properties</strong>
+                    </th>
+                </tr>
+                <tr>
+                    <button class="adminAddButton"><NavLink href="@("/admin/addProperty")">Add Property</NavLink></button>
+                </tr>
+                <tr>
+                    @foreach (PropertyInfo prop in typeof(Property).GetProperties())
+                    {
+                        <th>@prop.Name</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (properties != null)
+                {
+                    @foreach (var property in properties)
+                    {
+                        <tr>
+                            @foreach (PropertyInfo prop in typeof(Property).GetProperties())
+                            {
+                                <td>@prop.GetValue(property)</td>
+                                <td><button class="adminButton"><NavLink href="@($"/admin/editProperty/{property.PropertyId}")">Edit</NavLink></button></td>
+                                <td><button class="adminButton" onclick="@_propertyService.DeletePropertyAsync(property.PropertyId)">">Remove</button></td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        }
+
+        else if (currentView == "Compounds")
+        {
+            <thead>
+                <tr>
+                    <th colspan="@(typeof(Compound).GetProperties().Length)">
+                        <strong>Compounds</strong>
+                    </th>
+                </tr>
+                <tr>
+                    <button class="adminAddButton"><NavLink href="@("/admin/addCompound")">Add Compound</NavLink></button>
+                </tr>
+                <tr>
+                    @foreach (PropertyInfo comp in typeof(Compound).GetProperties())
+                    {
+                        <th>@comp.Name</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (compounds != null)
+                {
+                    @foreach (var compound in compounds)
+                    {
+                        <tr>
+                            @foreach (PropertyInfo comp in typeof(Compound).GetProperties())
+                            {
+                                <td>@comp.GetValue(compound)</td>
+                                <td><button class="adminButton"><NavLink href="@($"/admin/editCompound/{compound.CompoundId}")">Edit</NavLink></button></td>
+                                <td><button class="adminButton" onclick="@_compoundService.DeleteCompoundAsync(compound.CompoundId)">">Remove</button></td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        }
+
+        else
+                {
+        <thead>
+            <tr>
+                <th colspan="@(typeof(ApplicationUser).GetProperties().Length)">
+                    <strong>Users</strong>
+                </th>
+            </tr>
+            <tr>
+                <button class="adminAddButton"><NavLink href="@("/admin/addUser")">Add User</NavLink></button>
+            </tr>
+            <tr>
+                @foreach (PropertyInfo user in typeof(ApplicationUser).GetProperties())
+                {
+                    <th>@user.Name</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (users != null)
+            {
+                @foreach (var user in users)
+                {
+                    <tr>
+                        @foreach (PropertyInfo myuser in typeof(ApplicationUser).GetProperties())
+                        {
+                            <td>@myuser.GetValue(user)</td>
+                            <td><button class="adminButton"><NavLink href="@($"/admin/editUser/{user.Id}")">Edit</NavLink></button></td>
+                            <td><button class="adminButton" onclick="@_userService.DeleteUserAsync(user.Id)">">Remove</button></td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+        } 
+        </table> 
+
+
+@code {
+    private string currentView = "Properties";
+    private List<Property>? properties;
+    private List<Compound>? compounds;
+    private List<UserListDTO>? users;
+    protected override async Task OnInitializedAsync()
+    {   
+        properties = await _propertyService.GetAllProperties();
+        compounds = await _compoundService.GetAllCompoundsAsync();
+        users = await _userService.GetAllUsersDTOAsync();
+    }
+        
+}

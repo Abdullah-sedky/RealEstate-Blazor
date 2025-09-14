@@ -7,7 +7,7 @@ using Domain.Entities;
 
 namespace Domain.Entities
 {
-     public class Agent
+     public class Agent : ApplicationUser
     {
         public int AgentId { get; set; }
         public int YOE { get; set; }
@@ -21,8 +21,13 @@ namespace Domain.Entities
         public string Website { get; set; } = string.Empty;
         public string LinkedinProf { get; set; } = string.Empty;
         public string FacebookProf { get; set; } = string.Empty;
+        public string ProfilePicUrl { get; set; } = string.Empty;
+
         public List<ManagedProperty>? ManagedProperties;
-        public string UserId { get; set; } = null!; // Changed to string for Identity
+        public List<Notification>? Notifications;
+        public List<Task>? Tasks;
+
+        public string UserId { get; set; } = null!; 
         public ApplicationUser User { get; set; } = null!; // Navigation property
     }
 }
