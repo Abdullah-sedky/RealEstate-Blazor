@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,6 +31,8 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
+                    Fname = table.Column<string>(type: "text", nullable: true),
+                    Lname = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -65,6 +67,22 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Message = table.Column<string>(type: "text", nullable: false),
+                    Type = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -89,8 +107,8 @@ namespace Infrastructure.Migrations
                 name: "Agents",
                 columns: table => new
                 {
-                    AgentId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    AgentId = table.Column<int>(type: "integer", nullable: false),
                     YOE = table.Column<int>(type: "integer", nullable: false),
                     TotalDeals = table.Column<int>(type: "integer", nullable: false),
                     ClosedDeals = table.Column<int>(type: "integer", nullable: false),
@@ -102,11 +120,18 @@ namespace Infrastructure.Migrations
                     Website = table.Column<string>(type: "text", nullable: false),
                     LinkedinProf = table.Column<string>(type: "text", nullable: false),
                     FacebookProf = table.Column<string>(type: "text", nullable: false),
+                    ProfilePicUrl = table.Column<string>(type: "text", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Agents", x => x.AgentId);
+                    table.PrimaryKey("PK_Agents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Agents_AspNetUsers_Id",
+                        column: x => x.Id,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Agents_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -282,7 +307,16 @@ namespace Infrastructure.Migrations
                     Furnished = table.Column<bool>(type: "boolean", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: true),
                     CompoundId = table.Column<int>(type: "integer", nullable: false),
-                    LocationId = table.Column<int>(type: "integer", nullable: false)
+                    LocationId = table.Column<int>(type: "integer", nullable: false),
+                    Discriminator = table.Column<string>(type: "character varying(21)", maxLength: 21, nullable: false),
+                    AgentId = table.Column<string>(type: "text", nullable: true),
+                    ManagedSince = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CommissionRate = table.Column<decimal>(type: "numeric", nullable: true),
+                    LeaseStartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LeaseEndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CurrentTenantId = table.Column<string>(type: "text", nullable: true),
+                    LastInspectionDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    NextInspectionDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -427,6 +461,9 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "Photos");

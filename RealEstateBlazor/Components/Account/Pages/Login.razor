@@ -9,7 +9,7 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
-
+@inject UserManager<ApplicationUser> UserManager
 <PageTitle>Log in</PageTitle>
 
 <h1>Log in</h1>
@@ -90,12 +90,34 @@
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
         var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-        if (result.Succeeded)
-        {
-            Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
-        }
-        else if (result.RequiresTwoFactor)
+            if (result.Succeeded)
+    {
+        Logger.LogInformation("User logged in.");
+
+                // Get the user object
+                var user = await UserManager.FindByEmailAsync(Input.Email);
+
+                if (await UserManager.IsInRoleAsync(user, "Admin"))
+                {
+                    RedirectManager.RedirectTo($"/admin/{user.Id}");
+                }
+                else if (await UserManager.IsInRoleAsync(user, "Agent"))
+                {
+                    RedirectManager.RedirectTo($"/agent/{user.Id}");
+                }
+                else if (await UserManager.IsInRoleAsync(user, "Manager"))
+                {
+                    RedirectManager.RedirectTo($"/manager/{user.Id}");
+                }
+                else
+                {
+                    // Default: go home
+                    RedirectManager.RedirectTo("/");
+                }
+            }
+
+
+    else if (result.RequiresTwoFactor)
         {
             RedirectManager.RedirectTo(
                 "Account/LoginWith2fa",

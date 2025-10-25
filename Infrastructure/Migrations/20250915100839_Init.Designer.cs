@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250908105423_init")]
-    partial class init
+    [Migration("20250915100839_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,64 +24,6 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Domain.Entities.Agent", b =>
-                {
-                    b.Property<int>("AgentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AgentId"));
-
-                    b.Property<string>("AgencyName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Bio")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("ClosedDeals")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("FacebookProf")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("LicenseNum")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("LinkedinProf")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("OfficeAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<double>("Rating")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("TotalDeals")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Website")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("YOE")
-                        .HasColumnType("integer");
-
-                    b.HasKey("AgentId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Agents", (string)null);
-                });
 
             modelBuilder.Entity("Domain.Entities.ApplicationUser", b =>
                 {
@@ -101,6 +43,12 @@ namespace Infrastructure.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Fname")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Lname")
+                        .HasColumnType("text");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -145,6 +93,8 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.UseTptMappingStrategy();
                 });
 
             modelBuilder.Entity("Domain.Entities.City", b =>
@@ -243,6 +193,33 @@ namespace Infrastructure.Migrations
                     b.ToTable("Locations");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("Domain.Entities.Photo", b =>
                 {
                     b.Property<int>("PhotoId")
@@ -296,6 +273,11 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
+
                     b.Property<bool>("Furnished")
                         .HasColumnType("boolean");
 
@@ -331,6 +313,10 @@ namespace Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Properties");
+
+                    b.HasDiscriminator().HasValue("Property");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -467,13 +453,93 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Agent", b =>
                 {
-                    b.HasOne("Domain.Entities.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasBaseType("Domain.Entities.ApplicationUser");
 
-                    b.Navigation("User");
+                    b.Property<string>("AgencyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("AgentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Bio")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ClosedDeals")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FacebookProf")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("LicenseNum")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LinkedinProf")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OfficeAddress")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProfilePicUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double>("Rating")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("TotalDeals")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Website")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("YOE")
+                        .HasColumnType("integer");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Agents", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ManagedProperty", b =>
+                {
+                    b.HasBaseType("Domain.Entities.Property");
+
+                    b.Property<string>("AgentId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("CommissionRate")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("CurrentTenantId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastInspectionDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LeaseEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LeaseStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ManagedSince")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NextInspectionDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasDiscriminator().HasValue("ManagedProperty");
                 });
 
             modelBuilder.Entity("Domain.Entities.City", b =>
@@ -594,6 +660,23 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.Agent", b =>
+                {
+                    b.HasOne("Domain.Entities.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("Domain.Entities.Agent", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.ApplicationUser", b =>

@@ -76,9 +76,14 @@
 
         if (result.Succeeded)
         {
-            await UserManager.AddToRoleAsync(user, "Customer"); // Default role
-           
-                                                                 
+            await UserManager.AddToRoleAsync(user, "Customer"); // Default role                                                       
+        }
+        else
+        {
+            foreach(var error in result.Errors)
+            {
+                Console.WriteLine(error.Description);
+            }
         }
 
 
