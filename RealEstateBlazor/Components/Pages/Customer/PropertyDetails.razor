@@ -1,55 +1,341 @@
 ﻿@page "/property/{id:int}"
 @using Domain.Entities
-@using Blazorise
+@using Domain.Enums
 @inject IPropertyService PropertyService
+@inject NavigationManager Navigation
 
-@if (property == null)
+@if (isLoading)
 {
-    <p>Loading...</p>
+    <div class="text-center py-5">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading property details...</p>
+    </div>
+}
+else if (property == null)
+{
+    <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading">Property Not Found</h4>
+        <p>The property you're looking for doesn't exist or has been removed.</p>
+        <hr>
+        <NavLink href="/properties" class="btn btn-primary">Back to Properties</NavLink>
+    </div>
 }
 else
 {
-    <h1>@property.Name</h1>
-    <div class="property-details">
-        <Carousel>
-            @if (property.Photos != null)
-            {
-                @foreach (var photo in property.Photos)
-                {
-                    <CarouselSlide>
-                        <Image Src=@photo alt="@photo.Caption" />
-                    </CarouselSlide>
-                }
-            }
-            else
-            {
-                <CarouselSlide>
-                    <Image Src="/placeholder" alt="No photos found"/>
-                </CarouselSlide>
-            }
-        </Carousel>
-        <h2>@property.Name</h2>
-        <h3>Price: @property.Price</h3>
-        <p>Type: @property.PropertyType</p>
-        <p>@property.Description</p>
-        <div class="more-property-details">
-            <p>Area Size: @property.AreaSize</p>
-            <p>Bedrooms: @property.Bedrooms</p>
-            <p>Bathrooms: @property.Bathrooms</p>
+    <div class="property-details-container">
+        <div class="row">
+            <!-- Photo Gallery -->
+            <div class="col-md-8">
+                <div class="property-photos mb-4">
+                    @if (property.Photos != null && property.Photos.Any())
+                    {
+                        <div class="property-image-gallery">
+                            @if (property.Photos.Count == 1)
+                            {
+                                <img src="@property.Photos[0].ImageUrl" class="property-main-image" alt="@property.Photos[0].Caption" onerror="this.src='/images/placeholder-property.jpg'">
+                            }
+                            else
+                            {
+                                @if (currentPhoto != null)
+                                {
+                                    <div class="main-image-container mb-2">
+                                        <img src="@currentPhoto.ImageUrl" class="property-main-image" alt="@currentPhoto.Caption" onerror="this.src='/images/placeholder-property.jpg'">
+                                        @if (!string.IsNullOrEmpty(currentPhoto.Caption))
+                                        {
+                                            <div class="image-caption">@currentPhoto.Caption</div>
+                                        }
+                                    </div>
+                                }
+                                <div class="thumbnail-container">
+                                    @foreach (var photo in property.Photos)
+                                    {
+                                        <img src="@photo.ImageUrl" 
+                                             class="thumbnail @(photo == currentPhoto ? "active" : "")" 
+                                             alt="@photo.Caption"
+                                             @onclick="() => currentPhoto = photo"
+                                             onerror="this.src='/images/placeholder-property.jpg'">
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="property-placeholder-image">
+                            <div class="placeholder-content">
+                                <i class="fas fa-home fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No photos available</p>
+                            </div>
+                        </div>
+                    }
+                </div>
 
+                <!-- Property Description -->
+                <div class="property-description mb-4">
+                    <h2>@property.Name</h2>
+                    <p class="text-muted">@property.Description</p>
+                </div>
 
+                <!-- Property Details -->
+                <div class="property-specifications mb-4">
+                    <h3>Property Details</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Property Type:</strong></td>
+                                        <td>@property.PropertyType</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Status:</strong></td>
+                                        <td>
+                                            <span class="badge @GetStatusBadgeClass(property.Status)">@property.Status</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Area Size:</strong></td>
+                                        <td>@property.AreaSize.ToString("N2") sq ft</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Year Built:</strong></td>
+                                        <td>@property.YearBuilt</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Bedrooms:</strong></td>
+                                        <td>@property.Bedrooms</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Bathrooms:</strong></td>
+                                        <td>@property.Bathrooms</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Furnished:</strong></td>
+                                        <td>@(property.Furnished ? "Yes" : "No")</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <div class="property-sidebar">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h3 class="card-title text-primary mb-3">@property.Price.ToString("C")</h3>
+                            <button class="btn btn-primary w-100 mb-2">
+                                <i class="fas fa-phone me-2"></i>Contact Agent
+                            </button>
+                            <button class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-heart me-2"></i>Save Property
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Location Information -->
+                    @if (property.Location != null)
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Location</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-1"><strong>Address:</strong></p>
+                                <p class="mb-2">@property.Location.Address</p>
+                                @if (property.Location.City != null)
+                                {
+                                    <p class="mb-1"><strong>City:</strong> @property.Location.City.Name</p>
+                                    @if (property.Location.City.Country != null)
+                                    {
+                                        <p class="mb-1"><strong>Country:</strong> @property.Location.City.Country.Name</p>
+                                    }
+                                }
+                                @if (property.Location.PostalCode > 0)
+                                {
+                                    <p class="mb-0"><strong>Postal Code:</strong> @property.Location.PostalCode</p>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Compound Information -->
+                    @if (property.Compound != null)
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-building me-2"></i>Compound</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2">@property.Compound.Name</h6>
+                                @if (!string.IsNullOrEmpty(property.Compound.Description))
+                                {
+                                    <p class="card-text text-muted">@property.Compound.Description</p>
+                                }
+                                @if (property.Compound.City != null)
+                                {
+                                    <p class="mb-0"><small class="text-muted">Located in @property.Compound.City.Name</small></p>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Property Owner (if available) -->
+                    @if (property.User != null)
+                    {
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Property Owner</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-1">@(property.User.Fname ?? "") @(property.User.Lname ?? "")</p>
+                                <p class="mb-0 text-muted"><small>@property.User.Email</small></p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 }
+
+<style>
+    .property-details-container {
+        padding: 20px 0;
+    }
+
+    .property-image-gallery {
+        position: relative;
+    }
+
+    .main-image-container {
+        position: relative;
+    }
+
+    .property-main-image {
+        width: 100%;
+        height: 500px;
+        object-fit: cover;
+        border-radius: 8px;
+        display: block;
+    }
+
+    .image-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+
+    .thumbnail-container {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 0;
+    }
+
+    .thumbnail {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: border-color 0.2s;
+    }
+
+    .thumbnail:hover {
+        border-color: #007bff;
+    }
+
+    .thumbnail.active {
+        border-color: #007bff;
+        border-width: 3px;
+    }
+
+    .property-placeholder-image {
+        width: 100%;
+        height: 500px;
+        background-color: #f0f0f0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .placeholder-content {
+        text-align: center;
+    }
+
+    .property-sidebar .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .property-specifications {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        font-size: 0.875rem;
+    }
+</style>
 
 @code {
     [Parameter]
     public int id { get; set; }
 
     private Property? property;
+    private bool isLoading = true;
+    private Photo? currentPhoto;
 
     protected override async Task OnInitializedAsync()
     {
-        property = await PropertyService.GetPropertyByIdAsync(id);
+        try
+        {
+            property = await PropertyService.GetPropertyByIdAsync(id);
+            if (property?.Photos != null && property.Photos.Any())
+            {
+                currentPhoto = property.Photos.FirstOrDefault(p => p.IsPrim) ?? property.Photos.First();
+            }
+        }
+        catch (Exception)
+        {
+            // Property not found or error loading
+            property = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetStatusBadgeClass(PropertyStatus status)
+    {
+        return status switch
+        {
+            PropertyStatus.Available => "bg-success",
+            PropertyStatus.Sold => "bg-danger",
+            PropertyStatus.Pending => "bg-warning",
+            PropertyStatus.Rented => "bg-info",
+            _ => "bg-secondary"
+        };
     }
 }

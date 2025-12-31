@@ -19,12 +19,30 @@ namespace Infrastructure.Repositories
         }
         public async Task<List<Property>> GetAllPropertiesAsync()
         {
-            return await _context.Properties.ToListAsync();
+            return await _context.Properties
+                .Include(p => p.Photos)
+                .Include(p => p.Compound)
+                    .ThenInclude(c => c.City)
+                        .ThenInclude(city => city.Country)
+                .Include(p => p.Location)
+                    .ThenInclude(l => l.City)
+                        .ThenInclude(city => city.Country)
+                .Include(p => p.User)
+                .ToListAsync();
         }
 
-        public async Task<Property> GetPropertyByIdAsync(int id)
+        public async Task<Property?> GetPropertyByIdAsync(int id)
         {
-            return await _context.Properties.FindAsync(id);
+            return await _context.Properties
+                .Include(p => p.Photos)
+                .Include(p => p.Compound)
+                    .ThenInclude(c => c.City)
+                        .ThenInclude(city => city.Country)
+                .Include(p => p.Location)
+                    .ThenInclude(l => l.City)
+                        .ThenInclude(city => city.Country)
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.PropertyId == id);
         }
 
         public async Task<Property> CreatePropertyAsync(Property property)
@@ -46,9 +64,13 @@ namespace Infrastructure.Repositories
 
         public async Task EditPropertyInfoAsync(int id, Property property)
         {
-            var propToEdit = await _context.Properties.FindAsync(id);
+            var propToEdit = await _context.Properties
+                .Include(p => p.Location)
+                .FirstOrDefaultAsync(p => p.PropertyId == id);
+                
             if (propToEdit != null)
             {
+                // Update basic property fields
                 propToEdit.Furnished = property.Furnished;
                 propToEdit.Name = property.Name;
                 propToEdit.Description = property.Description;
@@ -57,16 +79,46 @@ namespace Infrastructure.Repositories
                 propToEdit.Bedrooms = property.Bedrooms;
                 propToEdit.Bathrooms = property.Bathrooms;
                 propToEdit.AreaSize = property.AreaSize;
-                propToEdit.Compound = property.Compound;
-                propToEdit.CompoundId = property.CompoundId;
                 propToEdit.YearBuilt = property.YearBuilt;
-                propToEdit.Photos = property.Photos;
-                propToEdit.Location = property.Location;
-                propToEdit.LocationId = property.LocationId;
                 propToEdit.PropertyType = property.PropertyType;
+                propToEdit.CompoundId = property.CompoundId;
+
+                // Handle Location update
+                if (property.Location != null)
+                {
+                    if (propToEdit.Location != null)
+                    {
+                        // Update existing location
+                        propToEdit.Location.Address = property.Location.Address;
+                        propToEdit.Location.PostalCode = property.Location.PostalCode;
+                        propToEdit.Location.Latitude = property.Location.Latitude;
+                        propToEdit.Location.Longitude = property.Location.Longitude;
+                        propToEdit.Location.CityId = property.Location.CityId;
+                    }
+                    else if (property.Location.LocationId > 0)
+                    {
+                        // Link to existing location
+                        propToEdit.LocationId = property.Location.LocationId;
+                    }
+                    else
+                    {
+                        // Create new location
+                        var newLocation = new Location
+                        {
+                            Address = property.Location.Address,
+                            PostalCode = property.Location.PostalCode,
+                            Latitude = property.Location.Latitude,
+                            Longitude = property.Location.Longitude,
+                            CityId = property.Location.CityId
+                        };
+                        _context.Locations.Add(newLocation);
+                        await _context.SaveChangesAsync(); // Save to get the LocationId
+                        propToEdit.LocationId = newLocation.LocationId;
+                    }
+                }
+
                 await _context.SaveChangesAsync();
             }
-
         }
     }
 }

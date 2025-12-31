@@ -2,50 +2,321 @@
 @using Domain.Entities
 @using Domain.Enums
 @using Microsoft.AspNetCore.Authorization
+@using Infrastructure.Persistence
+@using Microsoft.EntityFrameworkCore
 @inject IPropertyService _propertyService
-@attribute [Authorize (Roles="Admin")]
+@inject ICompoundService _compoundService
+@inject ApplicationDbContext _context
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Admin")]
 
-<h3>Edit Property</h3>
-<EditForm Model="@propertyToEdit" OnValidSubmit="edit">
-    <label for="Name">Name: </label>
-    <InputText @bind-Value="propertyToEdit.Name" id="Name" />
-    <label for="description">Description: </label>
-    <InputTextArea @bind-Value="propertyToEdit.Description" id="description" />
-    <label for="Price">Price: </label>
-    <InputNumber @bind-Value="propertyToEdit.Price" id="Price" />
-    <label for="PropertyType">Property Type: </label>
-    <InputSelect @bind-Value="propertyToEdit.PropertyType" id="PropertyType">
-        @foreach(var type in Enum.GetValues<PropertyType>())  //convert enum options to string
-        {
-            <option value="@type">@type.ToString()</option>
-        }
-    </InputSelect>
-    <label for="Area">Area Size: </label>
-    <InputNumber @bind-Value="propertyToEdit.AreaSize" id="Area" />
-    <label for="bedrooms">Bedrooms: </label>
-    <InputNumber @bind-Value="propertyToEdit.Bedrooms" id="bedrooms" />
-    <label for="bathrooms">Bathrooms: </label>
-    <InputNumber @bind-Value="propertyToEdit.Bathrooms" id="bathrooms" />
-    <label for="furnish">Furnished: </label>
-    <InputCheckbox @bind-Value="propertyToEdit.Furnished" id="furnish"/>
-    <label for="yearbuilt">Year Built: </label>
-    <InputNumber @bind-Value="propertyToEdit.YearBuilt" id="yearbuilt" />
-    <label for="PropertyStatus">Property Status: </label>
-    <InputSelect @bind-Value="propertyToEdit.Status" id="PropertyStatus">
-        @foreach (var type in Enum.GetValues<PropertyStatus>())  
-        {
-            <option value="@type">@type.ToString()</option>
-        }
-    </InputSelect>
-    <button type="submit">Save</button>
-    </EditForm>
+<PageTitle>Edit Property</PageTitle>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Edit Property</h2>
+                <NavLink href="/admin" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Admin
+                </NavLink>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading property...</p>
+                </div>
+            }
+            else if (propertyToEdit == null)
+            {
+                <div class="alert alert-warning" role="alert">
+                    <h4 class="alert-heading">Property Not Found</h4>
+                    <p>The property you're trying to edit doesn't exist.</p>
+                    <hr>
+                    <NavLink href="/admin" class="btn btn-primary">Back to Admin</NavLink>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@propertyToEdit" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="alert alert-danger" />
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Basic Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="Name" class="form-label">Property Name <span class="text-danger">*</span></label>
+                                    <InputText id="Name" class="form-control" @bind-Value="propertyToEdit.Name" />
+                                    <ValidationMessage For="@(() => propertyToEdit.Name)" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="Price" class="form-label">Price <span class="text-danger">*</span></label>
+                                    <InputNumber id="Price" class="form-control" @bind-Value="propertyToEdit.Price" />
+                                    <ValidationMessage For="@(() => propertyToEdit.Price)" />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <InputTextArea id="description" class="form-control" rows="4" @bind-Value="propertyToEdit.Description" />
+                                <ValidationMessage For="@(() => propertyToEdit.Description)" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="PropertyType" class="form-label">Property Type <span class="text-danger">*</span></label>
+                                    <InputSelect id="PropertyType" class="form-select" @bind-Value="propertyToEdit.PropertyType">
+                                        <option value="">-- Select Type --</option>
+                                        @foreach (var type in Enum.GetValues<PropertyType>())
+                                        {
+                                            <option value="@type">@type.ToString()</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => propertyToEdit.PropertyType)" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="PropertyStatus" class="form-label">Status <span class="text-danger">*</span></label>
+                                    <InputSelect id="PropertyStatus" class="form-select" @bind-Value="propertyToEdit.Status">
+                                        <option value="">-- Select Status --</option>
+                                        @foreach (var status in Enum.GetValues<PropertyStatus>())
+                                        {
+                                            <option value="@status">@status.ToString()</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => propertyToEdit.Status)" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="yearbuilt" class="form-label">Year Built</label>
+                                    <InputNumber id="yearbuilt" class="form-control" @bind-Value="propertyToEdit.YearBuilt" />
+                                    <ValidationMessage For="@(() => propertyToEdit.YearBuilt)" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Property Specifications</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="Area" class="form-label">Area Size (sq ft) <span class="text-danger">*</span></label>
+                                    <InputNumber id="Area" class="form-control" @bind-Value="propertyToEdit.AreaSize" />
+                                    <ValidationMessage For="@(() => propertyToEdit.AreaSize)" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="bedrooms" class="form-label">Bedrooms <span class="text-danger">*</span></label>
+                                    <InputNumber id="bedrooms" class="form-control" @bind-Value="propertyToEdit.Bedrooms" />
+                                    <ValidationMessage For="@(() => propertyToEdit.Bedrooms)" />
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="bathrooms" class="form-label">Bathrooms <span class="text-danger">*</span></label>
+                                    <InputNumber id="bathrooms" class="form-control" @bind-Value="propertyToEdit.Bathrooms" />
+                                    <ValidationMessage For="@(() => propertyToEdit.Bathrooms)" />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <InputCheckbox id="furnish" class="form-check-input" @bind-Value="propertyToEdit.Furnished" />
+                                    <label class="form-check-label" for="furnish">
+                                        Furnished
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Location & Compound</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="CompoundId" class="form-label">Compound <span class="text-danger">*</span></label>
+                                <InputSelect id="CompoundId" class="form-select" @bind-Value="propertyToEdit.CompoundId">
+                                    <option value="0">-- Select Compound --</option>
+                                    @if (compounds != null)
+                                    {
+                                        @foreach (var compound in compounds)
+                                        {
+                                            <option value="@compound.CompoundId">@compound.Name</option>
+                                        }
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => propertyToEdit.CompoundId)" />
+                            </div>
+
+                            @if (propertyToEdit.Location != null)
+                            {
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label for="Address" class="form-label">Address</label>
+                                        <InputText id="Address" class="form-control" @bind-Value="propertyToEdit.Location.Address" />
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="PostalCode" class="form-label">Postal Code</label>
+                                        <InputNumber id="PostalCode" class="form-control" @bind-Value="propertyToEdit.Location.PostalCode" />
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="CityId" class="form-label">City</label>
+                                        <InputSelect id="CityId" class="form-select" @bind-Value="propertyToEdit.Location.CityId">
+                                            <option value="0">-- Select City --</option>
+                                            @if (cities != null)
+                                            {
+                                                @foreach (var city in cities)
+                                                {
+                                                    <option value="@city.CityId">@city.Name</option>
+                                                }
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="Latitude" class="form-label">Latitude</label>
+                                        <InputNumber id="Latitude" class="form-control" @bind-Value="propertyToEdit.Location.Latitude" />
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="Longitude" class="form-label">Longitude</label>
+                                        <InputNumber id="Longitude" class="form-control" @bind-Value="propertyToEdit.Location.Longitude" />
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info">
+                                    <p class="mb-0">Location information is not available for this property. You may need to create a location first.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-between">
+                        <NavLink href="/admin" class="btn btn-secondary">Cancel</NavLink>
+                        <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-save me-2"></i>
+                                <span>Save Changes</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mt-3" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>@errorMessage
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success mt-3" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>@successMessage
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
 
 @code {
     [Parameter] public int id { get; set; }
-    private Property propertyToEdit = null!;
-    private void edit()
+
+    private Property? propertyToEdit;
+    private List<Compound>? compounds;
+    private List<City>? cities;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
     {
-        _propertyService.UpdatePropertyAsync(id, propertyToEdit);
+        try
+        {
+            // Load property with related data
+            propertyToEdit = await _propertyService.GetPropertyByIdAsync(id);
+
+            if (propertyToEdit != null)
+            {
+                // Ensure Location exists
+                if (propertyToEdit.Location == null)
+                {
+                    propertyToEdit.Location = new Location
+                    {
+                        LocationId = 0,
+                        Address = string.Empty,
+                        PostalCode = 0,
+                        Latitude = 0,
+                        Longitude = 0,
+                        CityId = 0
+                    };
+                }
+
+                // Load compounds and cities for dropdowns
+                compounds = await _compoundService.GetAllCompoundsAsync();
+                cities = await _context.Cities
+                    .Include(c => c.Country)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading property: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
+    private async Task HandleValidSubmit()
+    {
+        if (propertyToEdit == null) return;
+
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            // Update the property
+            await _propertyService.UpdatePropertyAsync(id, propertyToEdit);
+            successMessage = "Property updated successfully!";
+            
+            // Redirect after a short delay
+            await Task.Delay(1500);
+            Navigation.NavigateTo("/admin");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating property: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void HandleInvalidSubmit()
+    {
+        errorMessage = "Please correct the errors and try again.";
+    }
 }

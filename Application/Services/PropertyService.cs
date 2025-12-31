@@ -34,7 +34,7 @@ namespace Application.Services
             return properties;
         }
 
-        public async Task<Property> GetPropertyByIdAsync(int id)
+        public async Task<Property?> GetPropertyByIdAsync(int id)
         {
             return await _repository.GetPropertyByIdAsync(id);
         }
