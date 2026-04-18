@@ -1,0 +1,94 @@
+@page "/admin/addCompound"
+@using Application.Interfaces
+@using Domain.Entities
+@using Infrastructure.Persistence
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Add Compound</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Create Compound</h2>
+        <NavLink href="/admin" class="btn btn-outline-secondary">Back</NavLink>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
+    <EditForm Model="@compound" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="alert alert-danger" />
+
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <InputText class="form-control" @bind-Value="compound.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <InputTextArea class="form-control" rows="3" @bind-Value="compound.Description" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">City</label>
+            <InputSelect class="form-select" @bind-Value="compound.CityId">
+                <option value="0">Select city</option>
+                @foreach (var c in cities)
+                {
+                    <option value="@c.CityId">@c.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <button type="submit" class="btn btn-primary" disabled="@isBusy">
+            @(isBusy ? "Creating..." : "Create Compound")
+        </button>
+    </EditForm>
+</div>
+
+@code {
+    [Inject] private ICompoundService CompoundService { get; set; } = default!;
+    [Inject] private ApplicationDbContext Db { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private Compound compound = new();
+    private List<City> cities = new();
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cities = await Db.Cities.OrderBy(c => c.Name).ToListAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        isBusy = true;
+        errorMessage = null;
+        try
+        {
+            if (compound.CityId <= 0)
+            {
+                errorMessage = "Please select a city.";
+                return;
+            }
+
+            await CompoundService.CreateCompoundAsync(compound);
+            Nav.NavigateTo("/admin");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
+

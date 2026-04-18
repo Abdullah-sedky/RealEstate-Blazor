@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RealEstateBlazor.Components;
 using RealEstateBlazor.Components.Account;
 using Infrastructure.Persistence;
+using Infrastructure;
 using Domain.Entities;
 using Application.Interfaces;
 using Infrastructure.Repositories;
@@ -78,10 +79,17 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
+// Identity endpoints required by the Razor Components under /Components/Account/Pages
+app.MapAdditionalIdentityEndpoints();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// for controllers if needed
-//app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    await IdentitySeeder.SeedRolesAsync(roleManager);
+}
 
 app.Run();

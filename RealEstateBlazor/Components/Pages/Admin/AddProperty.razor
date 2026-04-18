@@ -1,7 +1,203 @@
 ﻿@page "/admin/addProperty"
+@using Application.Interfaces
+@using Domain.Entities
+@using Domain.Enums
+@using Infrastructure.Persistence
 @using Microsoft.AspNetCore.Authorization
-<h3>AddProperty</h3>
-@attribute [Authorize (Roles="Admin")]
-@code {
+@using Microsoft.EntityFrameworkCore
 
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Add Property</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Create Property</h2>
+        <NavLink href="/admin" class="btn btn-outline-secondary">Back</NavLink>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
+    <EditForm Model="@property" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="alert alert-danger" />
+
+        <div class="card mb-3">
+            <div class="card-header"><strong>Basic</strong></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Name</label>
+                        <InputText class="form-control" @bind-Value="property.Name" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Price</label>
+                        <InputNumber class="form-control" @bind-Value="property.Price" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <InputTextArea class="form-control" rows="3" @bind-Value="property.Description" />
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Type</label>
+                        <InputSelect class="form-select" @bind-Value="property.PropertyType">
+                            @foreach (var t in Enum.GetValues<PropertyType>())
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Status</label>
+                        <InputSelect class="form-select" @bind-Value="property.Status">
+                            @foreach (var s in Enum.GetValues<PropertyStatus>())
+                            {
+                                <option value="@s">@s</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Year Built</label>
+                        <InputNumber class="form-control" @bind-Value="property.YearBuilt" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Bedrooms</label>
+                        <InputNumber class="form-control" @bind-Value="property.Bedrooms" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Bathrooms</label>
+                        <InputNumber class="form-control" @bind-Value="property.Bathrooms" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Area Size</label>
+                        <InputNumber class="form-control" @bind-Value="property.AreaSize" />
+                    </div>
+                </div>
+
+                <div class="form-check">
+                    <InputCheckbox class="form-check-input" @bind-Value="property.Furnished" />
+                    <label class="form-check-label">Furnished</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><strong>Compound & Location</strong></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Compound</label>
+                    <InputSelect class="form-select" @bind-Value="property.CompoundId">
+                        <option value="0">Select compound</option>
+                        @foreach (var c in compounds)
+                        {
+                            <option value="@c.CompoundId">@c.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Address</label>
+                        <InputText class="form-control" @bind-Value="property.Location.Address" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Postal Code</label>
+                        <InputNumber class="form-control" @bind-Value="property.Location.PostalCode" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">City</label>
+                        <InputSelect class="form-select" @bind-Value="property.Location.CityId">
+                            <option value="0">Select city</option>
+                            @foreach (var city in cities)
+                            {
+                                <option value="@city.CityId">@city.Name</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Latitude</label>
+                        <InputNumber class="form-control" @bind-Value="property.Location.Latitude" />
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Longitude</label>
+                        <InputNumber class="form-control" @bind-Value="property.Location.Longitude" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" disabled="@isBusy">
+            @(isBusy ? "Creating..." : "Create Property")
+        </button>
+    </EditForm>
+</div>
+
+@code {
+    [Inject] private IPropertyService PropertyService { get; set; } = default!;
+    [Inject] private ICompoundService CompoundService { get; set; } = default!;
+    [Inject] private ApplicationDbContext Db { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private Property property = new()
+    {
+        Name = string.Empty,
+        Description = string.Empty,
+        Status = PropertyStatus.Available,
+        PropertyType = PropertyType.Flat,
+        Location = new Location()
+    };
+
+    private List<Compound> compounds = new();
+    private List<City> cities = new();
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        compounds = await CompoundService.GetAllCompoundsAsync();
+        cities = await Db.Cities.OrderBy(c => c.Name).ToListAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        isBusy = true;
+        errorMessage = null;
+        try
+        {
+            if (property.CompoundId <= 0)
+            {
+                errorMessage = "Please select a compound.";
+                return;
+            }
+            if (property.Location.CityId <= 0)
+            {
+                errorMessage = "Please select a city.";
+                return;
+            }
+
+            await PropertyService.CreatePropertyAsync(property);
+            Nav.NavigateTo("/admin");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
 }

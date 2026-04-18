@@ -1,0 +1,124 @@
+@page "/admin/editCompound/{id:int}"
+@using Application.Interfaces
+@using Domain.Entities
+@using Infrastructure.Persistence
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Edit Compound</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Edit Compound</h2>
+        <NavLink href="/admin" class="btn btn-outline-secondary">Back</NavLink>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status"></div>
+        </div>
+    }
+    else if (compound is null)
+    {
+        <div class="alert alert-warning" role="alert">Compound not found.</div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger" role="alert">@errorMessage</div>
+        }
+
+        <EditForm Model="@compound" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="alert alert-danger" />
+
+            <div class="mb-3">
+                <label class="form-label">Name</label>
+                <InputText class="form-control" @bind-Value="compound.Name" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <InputTextArea class="form-control" rows="3" @bind-Value="compound.Description" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">City</label>
+                <InputSelect class="form-select" @bind-Value="compound.CityId">
+                    <option value="0">Select city</option>
+                    @foreach (var c in cities)
+                    {
+                        <option value="@c.CityId">@c.Name</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <button type="submit" class="btn btn-primary" disabled="@isBusy">
+                @(isBusy ? "Saving..." : "Save")
+            </button>
+        </EditForm>
+    }
+</div>
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    [Inject] private ICompoundService CompoundService { get; set; } = default!;
+    [Inject] private ApplicationDbContext Db { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private Compound? compound;
+    private List<City> cities = new();
+    private bool isLoading = true;
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            cities = await Db.Cities.OrderBy(c => c.Name).ToListAsync();
+            compound = await CompoundService.GetCompoundByIdAsync(id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (compound is null) return;
+
+        isBusy = true;
+        errorMessage = null;
+        try
+        {
+            if (compound.CityId <= 0)
+            {
+                errorMessage = "Please select a city.";
+                return;
+            }
+
+            await CompoundService.UpdateCompoundAsync(id, compound);
+            Nav.NavigateTo("/admin");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
+

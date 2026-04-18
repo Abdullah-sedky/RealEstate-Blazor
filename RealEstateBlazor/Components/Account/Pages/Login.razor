@@ -99,15 +99,15 @@
 
                 if (await UserManager.IsInRoleAsync(user, "Admin"))
                 {
-                    RedirectManager.RedirectTo($"/admin/{user.Id}");
+                    RedirectManager.RedirectTo("/admin");
                 }
                 else if (await UserManager.IsInRoleAsync(user, "Agent"))
                 {
-                    RedirectManager.RedirectTo($"/agent/{user.Id}");
+                    RedirectManager.RedirectTo("/agent/home");
                 }
                 else if (await UserManager.IsInRoleAsync(user, "Manager"))
                 {
-                    RedirectManager.RedirectTo($"/manager/{user.Id}");
+                    RedirectManager.RedirectTo("/");
                 }
                 else
                 {

@@ -1,104 +1,119 @@
-﻿@* @page "/admin/addUser"
-@using Domain.Entities
-@using Domain.Enums
-@using Application.Services
-@using Application.Mappers
+﻿@page "/admin/addUser"
 @using Application.DTOs
+@using Application.Interfaces
+@using Application.Mappers
+@using Domain.Entities
 @using Microsoft.AspNetCore.Authorization
-@using System.Reflection
-@inject IUserService _userService
+@using Microsoft.AspNetCore.Identity
 
-@attribute [Authorize (Roles="Admin")]
+@attribute [Authorize(Roles = "Admin")]
 
+<PageTitle>Add User</PageTitle>
 
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Create User</h2>
+        <NavLink href="/admin" class="btn btn-outline-secondary">Back</NavLink>
+    </div>
 
-<h3>AddUser</h3>
-<div class="modal show d-block" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create New User</h5>
-                <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
+    <EditForm Model="@newUser" OnValidSubmit="CreateUserAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="alert alert-danger" />
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Username</label>
+                <InputText class="form-control" @bind-Value="newUser.UserName" />
+                <ValidationMessage For="@(() => newUser.UserName)" />
             </div>
-            <div class="modal-body">
-                <EditForm Model="newUser" OnValidSubmit="CreateUser">
-                    <DataAnnotationsValidator />
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <InputText @bind-Value="newUser.UserName" class="form-control" />
-                        <ValidationMessage For="@(() => newUser.UserName)" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <InputText @bind-Value="newUser.Email" class="form-control" />
-                        <ValidationMessage For="@(() => newUser.Email)" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone Number</label>
-                        <InputText @bind-Value="newUser.PhoneNumber" class="form-control" />
-                        <ValidationMessage For="@(() => newUser.PhoneNumber)" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <InputText type="password" @bind-Value="newUser.Password" class="form-control" />
-                        <ValidationMessage For="@(() => newUser.Password)" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Role</label>
-                        <InputSelect @bind-Value="newUser.Role" class="form-select">
-                            <option value="">Select Role</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Manager">Manager</option>
-                            <option value="Agent">Agent</option>
-                            <option value="Customer">Customer</option>
-                        </InputSelect>
-                        <ValidationMessage For="@(() => newUser.Role)" />
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" disabled="@isCreating">@(isCreating ? "Creating..." : "Create User")</button>
-                    </div>
-                </EditForm>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Email</label>
+                <InputText class="form-control" @bind-Value="newUser.Email" />
+                <ValidationMessage For="@(() => newUser.Email)" />
             </div>
         </div>
-    </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Phone Number</label>
+                <InputText class="form-control" @bind-Value="newUser.PhoneNumber" />
+                <ValidationMessage For="@(() => newUser.PhoneNumber)" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Role</label>
+                <InputSelect class="form-select" @bind-Value="newUser.Role">
+                    <option value="">Select role</option>
+                    @foreach (var r in roles)
+                    {
+                        <option value="@r">@r</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => newUser.Role)" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <InputText type="password" class="form-control" @bind-Value="newUser.Password" />
+            <ValidationMessage For="@(() => newUser.Password)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" disabled="@isBusy">
+            @(isBusy ? "Creating..." : "Create")
+        </button>
+    </EditForm>
 </div>
 
 @code {
-    private bool isCreating = false;
-    private CreateUserDTO newUser = new();
-    private List<UserListDTO>? users;
-    
+    [Inject] private IUserService UserService { get; set; } = default!;
+    [Inject] private RoleManager<IdentityRole> RoleManager { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
 
-    private void CloseCreateModal()
+    private CreateUserDTO newUser = new();
+    private List<string> roles = new();
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
     {
-        showCreateModal = false;
-        newUser = new CreateUserDTO();
+        roles = await Task.FromResult(RoleManager.Roles.Select(r => r.Name!).OrderBy(x => x).ToList());
     }
 
-    private async Task CreateUser()
+    private async Task CreateUserAsync()
     {
-        isCreating = true;
+        isBusy = true;
+        errorMessage = null;
         try
         {
             var user = UserMapper.ToApplicationUser(newUser);
-            var result = await _userService.CreateUserAsync(user, newUser.Password);
-
-            if (result.Succeeded)
+            var create = await UserService.CreateUserAsync(user, newUser.Password);
+            if (!create.Succeeded)
             {
-                await _userService.AddUserToRoleAsync(user, newUser.Role);
-                await LoadUsers();
-                CloseCreateModal();
+                errorMessage = string.Join("; ", create.Errors.Select(e => e.Description));
+                return;
             }
-            else
-            {
 
-                Console.WriteLine($"Error creating user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            var addRole = await UserService.AddUserToRoleAsync(user, newUser.Role);
+            if (!addRole.Succeeded)
+            {
+                errorMessage = string.Join("; ", addRole.Errors.Select(e => e.Description));
+                return;
             }
+
+            Nav.NavigateTo("/admin");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
         }
         finally
         {
-            isCreating = false;
+            isBusy = false;
         }
     }
-} *@
+}

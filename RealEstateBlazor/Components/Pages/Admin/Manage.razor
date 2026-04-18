@@ -1,143 +1,294 @@
 ﻿@page "/admin"
-@inject PropertyService _propertyService
-@inject CompoundService _compoundService
-@inject UserService _userService
+@using Application.DTOs
+@using Application.Interfaces
 @using Domain.Entities
-@using Infrastructure.Persistence
-@using Application.Services
 @using Microsoft.AspNetCore.Authorization
-@using System.Reflection
 
 @attribute [Authorize(Roles = "Admin")]
 
-<PageTitle>Properties</PageTitle>
+<PageTitle>Admin</PageTitle>
 
-    <table class="table table-striped">
-        <thead>
-            <button class="table-view-button" @onclick="@(() => currentView = "Properties")">Properties</button>
-            <button class="table-view-button" @onclick="@(() => currentView = "Compounds")">Compounds</button>
-            <button class="table-view-button" @onclick="@(() => currentView = "Users")">Users</button>
-        </thead>
-        @if (currentView == "Properties")
-        {
-            <thead>
-                <tr>
-                    <th colspan="@(typeof(Property).GetProperties().Length)">
-                        <strong>Properties</strong>
-                    </th>
-                </tr>
-                <tr>
-                    <button class="adminAddButton"><NavLink href="@("/admin/addProperty")">Add Property</NavLink></button>
-                </tr>
-                <tr>
-                    @foreach (PropertyInfo prop in typeof(Property).GetProperties())
-                    {
-                        <th>@prop.Name</th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
-                @if (properties != null)
-                {
-                    @foreach (var property in properties)
-                    {
-                        <tr>
-                            @foreach (PropertyInfo prop in typeof(Property).GetProperties())
-                            {
-                                <td>@prop.GetValue(property)</td>
-                                <td><button class="adminButton"><NavLink href="@($"/admin/editProperty/{property.PropertyId}")">Edit</NavLink></button></td>
-                                <td><button class="adminButton" onclick="@_propertyService.DeletePropertyAsync(property.PropertyId)">">Remove</button></td>
-                            }
-                        </tr>
-                    }
-                }
-            </tbody>
-        }
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Admin Dashboard</h2>
+        <button class="btn btn-outline-secondary btn-sm" @onclick="ReloadAsync" disabled="@isLoading">Refresh</button>
+    </div>
 
-        else if (currentView == "Compounds")
-        {
-            <thead>
-                <tr>
-                    <th colspan="@(typeof(Compound).GetProperties().Length)">
-                        <strong>Compounds</strong>
-                    </th>
-                </tr>
-                <tr>
-                    <button class="adminAddButton"><NavLink href="@("/admin/addCompound")">Add Compound</NavLink></button>
-                </tr>
-                <tr>
-                    @foreach (PropertyInfo comp in typeof(Compound).GetProperties())
-                    {
-                        <th>@comp.Name</th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
-                @if (compounds != null)
-                {
-                    @foreach (var compound in compounds)
-                    {
-                        <tr>
-                            @foreach (PropertyInfo comp in typeof(Compound).GetProperties())
-                            {
-                                <td>@comp.GetValue(compound)</td>
-                                <td><button class="adminButton"><NavLink href="@($"/admin/editCompound/{compound.CompoundId}")">Edit</NavLink></button></td>
-                                <td><button class="adminButton" onclick="@_compoundService.DeleteCompoundAsync(compound.CompoundId)">">Remove</button></td>
-                            }
-                        </tr>
-                    }
-                }
-            </tbody>
-        }
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
 
-        else
-                {
-        <thead>
-            <tr>
-                <th colspan="@(typeof(ApplicationUser).GetProperties().Length)">
-                    <strong>Users</strong>
-                </th>
-            </tr>
-            <tr>
-                <button class="adminAddButton"><NavLink href="@("/admin/addUser")">Add User</NavLink></button>
-            </tr>
-            <tr>
-                @foreach (PropertyInfo user in typeof(ApplicationUser).GetProperties())
-                {
-                    <th>@user.Name</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @if (users != null)
-            {
-                @foreach (var user in users)
-                {
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <button class="nav-link @(currentView == ViewTab.Properties ? "active" : "")" @onclick="() => SetViewAsync(ViewTab.Properties)">Properties</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(currentView == ViewTab.Compounds ? "active" : "")" @onclick="() => SetViewAsync(ViewTab.Compounds)">Compounds</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(currentView == ViewTab.Users ? "active" : "")" @onclick="() => SetViewAsync(ViewTab.Users)">Users</button>
+        </li>
+    </ul>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status"></div>
+        </div>
+    }
+    else if (currentView == ViewTab.Properties)
+    {
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0">Properties</h4>
+            <NavLink href="/admin/addProperty" class="btn btn-primary btn-sm">Add Property</NavLink>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
                     <tr>
-                        @foreach (PropertyInfo myuser in typeof(ApplicationUser).GetProperties())
-                        {
-                            <td>@myuser.GetValue(user)</td>
-                            <td><button class="adminButton"><NavLink href="@($"/admin/editUser/{user.Id}")">Edit</NavLink></button></td>
-                            <td><button class="adminButton" onclick="@_userService.DeleteUserAsync(user.Id)">">Remove</button></td>
-                        }
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Type</th>
+                        <th>Owner</th>
+                        <th class="text-end">Actions</th>
                     </tr>
-                }
-            }
-        </tbody>
-        } 
-        </table> 
+                </thead>
+                <tbody>
+                    @if (properties?.Any() == true)
+                    {
+                        @foreach (var p in properties)
+                        {
+                            <tr>
+                                <td>@p.PropertyId</td>
+                                <td>@p.Name</td>
+                                <td>@p.Price.ToString("C")</td>
+                                <td>@p.Status</td>
+                                <td>@p.PropertyType</td>
+                                <td>@(p.User?.Email ?? "—")</td>
+                                <td class="text-end">
+                                    <NavLink class="btn btn-outline-secondary btn-sm me-2" href="@($"/admin/editProperty/{p.PropertyId}")">Edit</NavLink>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeletePropertyAsync(p.PropertyId)" disabled="@isBusy">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="7" class="text-muted">No properties found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (currentView == ViewTab.Compounds)
+    {
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0">Compounds</h4>
+            <NavLink href="/admin/addCompound" class="btn btn-primary btn-sm">Add Compound</NavLink>
+        </div>
 
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>CityId</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (compounds?.Any() == true)
+                    {
+                        @foreach (var c in compounds)
+                        {
+                            <tr>
+                                <td>@c.CompoundId</td>
+                                <td>@c.Name</td>
+                                <td>@(string.IsNullOrWhiteSpace(c.Description) ? "—" : c.Description)</td>
+                                <td>@c.CityId</td>
+                                <td class="text-end">
+                                    <NavLink class="btn btn-outline-secondary btn-sm me-2" href="@($"/admin/editCompound/{c.CompoundId}")">Edit</NavLink>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteCompoundAsync(c.CompoundId)" disabled="@isBusy">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="5" class="text-muted">No compounds found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0">Users</h4>
+            <NavLink href="/admin/addUser" class="btn btn-primary btn-sm">Add User</NavLink>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Username</th>
+                        <th>Phone</th>
+                        <th>Roles</th>
+                        <th>Properties</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (users?.Any() == true)
+                    {
+                        @foreach (var u in users)
+                        {
+                            <tr>
+                                <td>@u.Email</td>
+                                <td>@u.UserName</td>
+                                <td>@(string.IsNullOrWhiteSpace(u.PhoneNumber) ? "—" : u.PhoneNumber)</td>
+                                <td>@(u.Roles.Count == 0 ? "—" : string.Join(", ", u.Roles))</td>
+                                <td>@u.PropertiesCount</td>
+                                <td class="text-end">
+                                    <NavLink class="btn btn-outline-secondary btn-sm me-2" href="@($"/admin/editUser/{u.Id}")">Edit</NavLink>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteUserAsync(u.Id)" disabled="@isBusy">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="text-muted">No users found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
 
 @code {
-    private string currentView = "Properties";
+    [Inject] private IPropertyService PropertyService { get; set; } = default!;
+    [Inject] private ICompoundService CompoundService { get; set; } = default!;
+    [Inject] private IUserService UserService { get; set; } = default!;
+
+    private enum ViewTab { Properties, Compounds, Users }
+
+    private ViewTab currentView = ViewTab.Properties;
     private List<Property>? properties;
     private List<Compound>? compounds;
     private List<UserListDTO>? users;
+    private bool isLoading = true;
+    private bool isBusy;
+    private string? errorMessage;
+
     protected override async Task OnInitializedAsync()
-    {   
-        properties = await _propertyService.GetAllProperties();
-        compounds = await _compoundService.GetAllCompoundsAsync();
-        users = await _userService.GetAllUsersDTOAsync();
+    {
+        await ReloadAsync();
     }
-        
+
+    private async Task SetViewAsync(ViewTab view)
+    {
+        currentView = view;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            if (currentView == ViewTab.Properties)
+            {
+                properties = await PropertyService.GetAllProperties();
+            }
+            else if (currentView == ViewTab.Compounds)
+            {
+                compounds = await CompoundService.GetAllCompoundsAsync();
+            }
+            else
+            {
+                users = await UserService.GetAllUsersDTOAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task DeletePropertyAsync(int id)
+    {
+        isBusy = true;
+        errorMessage = null;
+        try
+        {
+            await PropertyService.DeletePropertyAsync(id);
+            properties = await PropertyService.GetAllProperties();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task DeleteCompoundAsync(int id)
+    {
+        isBusy = true;
+        errorMessage = null;
+        try
+        {
+            await CompoundService.DeleteCompoundAsync(id);
+            compounds = await CompoundService.GetAllCompoundsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task DeleteUserAsync(string id)
+    {
+        isBusy = true;
+        errorMessage = null;
+        try
+        {
+            var result = await UserService.DeleteUserAsync(id);
+            if (!result.Succeeded)
+            {
+                errorMessage = string.Join("; ", result.Errors.Select(e => e.Description));
+                return;
+            }
+            users = await UserService.GetAllUsersDTOAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
 }
